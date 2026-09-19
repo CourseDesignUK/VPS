@@ -3,155 +3,448 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Phone VPS Prototype</title>
+<title>XR Tactical VPS Platform</title>
 <style>
-:root { --bg:#101317; --panel:#191e24; --line:#303841; --text:#f3f5f7; --muted:#aeb7c2; --accent:#54c7ff; --ok:#5ee08a; --warn:#ffd166; }
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between}
-h1{font-size:20px;margin:0}.wrap{display:grid;grid-template-columns:1fr 330px;min-height:calc(100vh - 58px)}
-main{position:relative;min-height:calc(100vh - 58px);overflow:hidden;background:#050607}
-video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
-#cameraPlaceholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:30px;color:var(--muted)}
-#cameraPlaceholder.hidden{display:none}
-.crosshair{position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);pointer-events:none}
-.crosshair:before,.crosshair:after{content:"";position:absolute;background:var(--accent)}
-.crosshair:before{width:70px;height:2px;top:34px;left:0}.crosshair:after{height:70px;width:2px;left:34px;top:0}
-#targetBox{position:absolute;border:2px solid var(--ok);width:150px;height:150px;left:50%;top:50%;transform:translate(-50%,-50%);display:none;pointer-events:none}
-.panel{background:var(--panel);border-left:1px solid var(--line);padding:16px;overflow:auto}
-section{border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:12px}
-h2{font-size:15px;margin:0 0 10px}.row{display:flex;gap:8px;margin:8px 0}.row>*{flex:1}
-button,select,input{font:inherit;color:var(--text);background:#242b33;border:1px solid #3b4650;border-radius:8px;padding:9px}
-button{cursor:pointer}button:hover{filter:brightness(1.12)}button.primary{background:#12688c;border-color:#1b91c0}button.danger{background:#682b31}
-label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
-.status{padding:9px;border-radius:8px;background:#10151a;border:1px solid var(--line);font-size:13px}
-.good{color:var(--ok)}.warn{color:var(--warn)}
-.stat{display:grid;grid-template-columns:1fr 1fr;gap:7px}.stat div{background:#11161b;border:1px solid var(--line);padding:8px;border-radius:8px;font-size:12px}.stat b{display:block;font-size:16px;margin-top:2px}
-#mapCanvas{width:100%;height:220px;background:#0d1115;border:1px solid var(--line);border-radius:8px}
-.anchor{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}.anchor:last-child{border:0}
-.small{font-size:11px;color:var(--muted)}.hidden{display:none!important}
-#overlay{position:absolute;left:16px;top:16px;background:rgba(10,14,18,.82);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:190px;font-size:12px;backdrop-filter:blur(8px)}
-#arObjects{position:absolute;inset:0;pointer-events:none}
-.arObj{position:absolute;transform:translate(-50%,-50%);padding:8px 11px;border-radius:9px;background:rgba(10,14,18,.86);border:1px solid var(--accent);box-shadow:0 4px 20px #0008;font-weight:700;white-space:nowrap}
-footer{font-size:11px;color:var(--muted);line-height:1.4}
-@media(max-width:800px){.wrap{grid-template-columns:1fr}.panel{border-left:0;border-top:1px solid var(--line);max-height:none}main{height:58vh;min-height:360px}.panel{padding-bottom:30px}}
+:root {
+  --bg-primary: #0a0d12;
+  --bg-secondary: #121820;
+  --bg-card: rgba(18, 24, 32, 0.85);
+  --border-color: rgba(64, 82, 105, 0.45);
+  --border-focus: #00d0ff;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b9bb0;
+  --accent-cyan: #00d0ff;
+  --accent-blue: #007acc;
+  --status-ok: #00ff88;
+  --status-warn: #ffb84d;
+  --status-err: #ff4d4d;
+  --font-mono: "SF Mono", "Fira Code", "Courier New", monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  height: 100vh;
+}
+
+header {
+  height: 52px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 13px;
+  color: var(--accent-cyan);
+}
+
+.badge-tag {
+  background: rgba(0, 208, 255, 0.12);
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.wrap {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  height: calc(100vh - 52px);
+}
+
+main {
+  position: relative;
+  background: #020406;
+  overflow: hidden;
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+#detectionCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+#cameraPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #141c24 0%, #080b0e 100%);
+  color: var(--text-secondary);
+  gap: 10px;
+}
+
+.hud-reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  border: 1px dashed rgba(0, 208, 255, 0.3);
+  border-radius: 50%;
+}
+
+.hud-reticle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--accent-cyan);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent-cyan);
+}
+
+#telemetryHud {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px 16px;
+  backdrop-filter: blur(12px);
+  min-width: 220px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.hud-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.hud-status {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--status-err);
+}
+
+.status-dot.active {
+  background: var(--status-ok);
+  box-shadow: 0 0 8px var(--status-ok);
+}
+
+.telemetry-row {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.telemetry-row span {
+  color: var(--text-primary);
+}
+
+.sidebar {
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border-color);
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.panel-block {
+  background: rgba(10, 13, 18, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 14px;
+}
+
+.panel-block h2 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.row > * { flex: 1; }
+
+button, select, input {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-primary);
+  background: #18202a;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px 10px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+button {
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+button:hover {
+  background: #222d3a;
+  border-color: var(--border-focus);
+}
+
+button.primary {
+  background: rgba(0, 208, 255, 0.15);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+button.primary:hover {
+  background: rgba(0, 208, 255, 0.25);
+  box-shadow: 0 0 10px rgba(0, 208, 255, 0.2);
+}
+
+button.danger {
+  background: rgba(255, 77, 77, 0.12);
+  border-color: var(--status-err);
+  color: var(--status-err);
+}
+
+label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 8px 0 4px;
+  font-family: var(--font-mono);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.stat-item {
+  background: #10151c;
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.stat-item b {
+  display: block;
+  font-size: 14px;
+  color: var(--accent-cyan);
+  margin-top: 2px;
+}
+
+#mapCanvas {
+  width: 100%;
+  height: 200px;
+  background: #080b0f;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  display: block;
+}
+
+.anchor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.anchor-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #10151c;
+  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+#arObjects {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.arObj {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 5px 9px;
+  border-radius: 4px;
+  background: rgba(10, 13, 18, 0.9);
+  border: 1px solid var(--border-focus);
+  box-shadow: 0 0 12px rgba(0, 208, 255, 0.25);
+  font-weight: 700;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.arObj.fire { border-color: var(--status-err); color: var(--status-err); }
+.arObj.exit { border-color: var(--status-ok); color: var(--status-ok); }
+
+@media (max-width: 850px) {
+  .wrap { grid-template-columns: 1fr; height: auto; }
+  main { height: 48vh; min-height: 320px; }
+  body { overflow: auto; }
+}
 </style>
 </head>
 <body>
+
 <header>
-  <h1>📱 Phone VPS Prototype</h1>
-  <div class="small">Camera + visual anchors + local map</div>
+  <div class="brand">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="2" x2="12" y2="6"></line>
+      <line x1="12" y1="18" x2="12" y2="22"></line>
+      <line x1="2" y1="12" x2="6" y2="12"></line>
+      <line x1="18" y1="12" x2="22" y2="12"></line>
+    </svg>
+    <span>VPS Operational Engine</span>
+  </div>
+  <div class="badge-tag" id="engineStatus">CORE: ONLINE</div>
 </header>
 
 <div class="wrap">
-<main id="cameraArea">
-  <video id="video" playsinline muted></video>
-  <div id="cameraPlaceholder">
-    <div>
-      <h2>Phone VPS</h2>
-      <p>Start the camera, then point at a printed anchor.</p>
-      <p class="small">This prototype provides the map/UI framework. True AprilTag pose detection requires a detector library or native AR API.</p>
+  <main id="cameraArea">
+    <video id="video" playsinline muted></video>
+    <canvas id="detectionCanvas"></canvas>
+    
+    <div id="cameraPlaceholder">
+      <p style="font-family: var(--font-mono); font-size: 13px;">OPTICAL SENSOR DISCONNECTED</p>
+      <p style="font-size: 12px;">Initialize video capture to track spatial visual tags.</p>
     </div>
-  </div>
-  <div class="crosshair"></div>
-  <div id="targetBox"></div>
-  <div id="overlay">
-    <b id="vpsState">NOT LOCALIZED</b><br>
-    Anchor: <span id="currentAnchor">None</span><br>
-    Position: <span id="positionText">—</span><br>
-    Confidence: <span id="confidenceText">0%</span>
-  </div>
-  <div id="arObjects"></div>
-</main>
 
-<aside class="panel">
-<section>
-  <h2>1. Camera</h2>
-  <div class="row">
-    <button id="startCamera" class="primary">Start camera</button>
-    <button id="stopCamera">Stop</button>
-  </div>
-  <div class="status" id="cameraStatus">Camera stopped</div>
-</section>
+    <div class="hud-reticle"></div>
 
-<section>
-  <h2>2. VPS mode</h2>
-  <label>Selected anchor</label>
-  <select id="anchorSelect"></select>
-  <div class="row">
-    <button id="simulateDetect" class="primary">Simulate detection</button>
-    <button id="clearVps">Clear</button>
-  </div>
-  <div class="small">For the first prototype, simulation lets you test the coordinate system without installing an AprilTag detector.</div>
-</section>
+    <div id="telemetryHud">
+      <div class="hud-title">Navigation Pose Telemetry</div>
+      <div class="hud-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="vpsState">SEARCHING</span>
+      </div>
+      <div class="telemetry-row">Ref Anchor: <span id="currentAnchor">NONE</span></div>
+      <div class="telemetry-row">Coords (X,Y,Z): <span id="positionText">0.00, 0.00, 0.00</span></div>
+      <div class="telemetry-row">FPS: <span id="fpsVal">00</span> | Process: <span id="latencyVal">0ms</span></div>
+    </div>
 
-<section>
-  <h2>3. Position</h2>
-  <div class="stat">
-    <div>X<b id="xVal">0.00 m</b></div>
-    <div>Y<b id="yVal">0.00 m</b></div>
-    <div>Z<b id="zVal">0.00 m</b></div>
-    <div>Heading<b id="headingVal">0°</b></div>
-  </div>
-  <label>Simulated distance from anchor (m)</label>
-  <input id="distance" type="number" value="2" min="0.1" step="0.1">
-  <label>Simulated bearing from anchor (degrees)</label>
-  <input id="bearing" type="number" value="0" step="1">
-</section>
+    <div id="arObjects"></div>
+  </main>
 
-<section>
-  <h2>4. Local map</h2>
-  <canvas id="mapCanvas" width="600" height="330"></canvas>
-  <div class="row">
-    <button id="addAnchor">Add anchor</button>
-    <button id="downloadMap">Download map</button>
-  </div>
-  <div id="anchorList"></div>
-</section>
+  <aside class="sidebar">
+    <section class="panel-block">
+      <h2>Hardware Feed</h2>
+      <div class="row">
+        <button id="startCamera" class="primary">Engage Sensor</button>
+        <button id="stopCamera">Disengage</button>
+      </div>
+    </section>
 
-<section>
-  <h2>5. AR training objects</h2>
-  <div class="row">
-    <button id="addFire">🔥 Add fire</button>
-    <button id="addExit">🚪 Add exit</button>
-  </div>
-  <div class="row">
-    <button id="clearObjects">Clear objects</button>
-  </div>
-  <div class="small">Objects are stored in the same local coordinate system as the VPS anchors.</div>
-</section>
+    <section class="panel-block">
+      <h2>Calibration & Intrinsics</h2>
+      <label>FOCAL RATIO (FX / WIDTH)</label>
+      <input id="focalRatio" type="number" value="1.25" step="0.05">
+    </section>
 
-<section>
-  <h2>6. Save / load</h2>
-  <div class="row">
-    <button id="saveLocal">Save locally</button>
-    <button id="resetMap" class="danger">Reset map</button>
-  </div>
-</section>
+    <section class="panel-block">
+      <h2>Computed Metric State</h2>
+      <div class="stat-grid">
+        <div class="stat-item">POS X<b id="xVal">0.00 m</b></div>
+        <div class="stat-item">POS Y<b id="yVal">0.00 m</b></div>
+        <div class="stat-item">POS Z<b id="zVal">0.00 m</b></div>
+        <div class="stat-item">HEADING<b id="headingVal">000°</b></div>
+      </div>
+    </section>
 
-<footer>
-  Prototype only. Camera access normally requires HTTPS or localhost. A production version should use a real AprilTag/ArUco detector and preferably ARKit/ARCore/WebXR for continuous phone pose tracking.
-</footer>
-</aside>
+    <section class="panel-block">
+      <h2>Spatial Map Overview</h2>
+      <canvas id="mapCanvas" width="600" height="330"></canvas>
+      <div class="row" style="margin-top: 10px;">
+        <button id="addAnchor">Add Tag</button>
+        <button id="downloadMap">Export Map</button>
+      </div>
+      <div class="anchor-list" id="anchorList"></div>
+    </section>
+
+    <section class="panel-block">
+      <h2>AR Scene Nodes</h2>
+      <div class="row">
+        <button id="addFire" class="danger">Add Hazard</button>
+        <button id="addExit">Add Exit Waypoint</button>
+      </div>
+      <button id="clearObjects" style="width: 100%; margin-top: 6px;">Clear Nodes</button>
+    </section>
+  </aside>
 </div>
 
 <script>
-/* ============================================================
-   PHONE VPS PROTOTYPE
-   ============================================================
-   Coordinate system:
-     X = left/right
-     Y = vertical
-     Z = forward/back
-   All distances are metres.
-   ============================================================ */
-
 const defaultMap = {
-  name: "Aircraft Training Bay",
+  name: "Airfield Bay Grid",
   anchors: [
-    {id:"TAG_001", x:0, y:0, z:0, rotation:0, size:0.20},
-    {id:"TAG_002", x:5, y:0, z:0, rotation:90, size:0.20},
-    {id:"TAG_003", x:5, y:0, z:5, rotation:180, size:0.20},
-    {id:"TAG_004", x:0, y:0, z:5, rotation:270, size:0.20}
+    { id: "TAG_0", numericId: 0, x: 0.0, y: 0.0, z: 0.0, rotation: 0, size: 0.16 },
+    { id: "TAG_1", numericId: 1, x: 4.0, y: 0.0, z: 0.0, rotation: 90, size: 0.16 },
+    { id: "TAG_2", numericId: 2, x: 4.0, y: 0.0, z: 4.0, rotation: 180, size: 0.16 },
+    { id: "TAG_3", numericId: 3, x: 0.0, y: 0.0, z: 4.0, rotation: 270, size: 0.16 }
   ],
   objects: []
 };
@@ -159,214 +452,438 @@ const defaultMap = {
 let mapData = JSON.parse(localStorage.getItem("phoneVPSMap") || "null") || structuredClone(defaultMap);
 let stream = null;
 let localized = false;
-let currentAnchor = null;
-let phonePose = {x:0,y:0,z:0,heading:0};
+let phonePose = { x: 0, y: 0, z: 0, heading: 0 };
+let animFrameId = null;
 
 const $ = id => document.getElementById(id);
 const video = $("video");
+const overlayCanvas = $("detectionCanvas");
+const octx = overlayCanvas.getContext("2d");
 
-function populateAnchors(){
-  $("anchorSelect").innerHTML = "";
-  mapData.anchors.forEach(a=>{
-    const o=document.createElement("option");
-    o.value=a.id;
-    o.textContent=`${a.id}  (${a.x}, ${a.y}, ${a.z})`;
-    $("anchorSelect").appendChild(o);
+const procCanvas = document.createElement("canvas");
+const pctx = procCanvas.getContext("2d", { willReadFrequently: true });
+const PROC_W = 320;
+let PROC_H = 240;
+
+function processCameraFrame() {
+  if (!stream || video.readyState !== video.HAVE_ENOUGH_DATA) {
+    animFrameId = requestAnimationFrame(processCameraFrame);
+    return;
+  }
+
+  const t0 = performance.now();
+
+  if (overlayCanvas.width !== video.videoWidth || overlayCanvas.height !== video.videoHeight) {
+    overlayCanvas.width = video.videoWidth;
+    overlayCanvas.height = video.videoHeight;
+    PROC_H = Math.round((video.videoHeight / video.videoWidth) * PROC_W);
+    procCanvas.width = PROC_W;
+    procCanvas.height = PROC_H;
+  }
+
+  octx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  pctx.drawImage(video, 0, 0, PROC_W, PROC_H);
+
+  const imgData = pctx.getImageData(0, 0, PROC_W, PROC_H);
+  const data = imgData.data;
+  const gray = new Uint8Array(PROC_W * PROC_H);
+
+  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+    gray[j] = (data[i] * 77 + data[i + 1] * 150 + data[i + 2] * 29) >> 8;
+  }
+
+  const bin = new Uint8Array(PROC_W * PROC_H);
+  const S = Math.floor(PROC_W / 8);
+  const T = 0.15;
+  const s2 = Math.floor(S / 2);
+
+  const integral = new Int32Array(PROC_W * PROC_H);
+  for (let i = 0; i < PROC_W; i++) {
+    let sum = 0;
+    for (let j = 0; j < PROC_H; j++) {
+      const idx = j * PROC_W + i;
+      sum += gray[idx];
+      integral[idx] = (i === 0 ? 0 : integral[idx - 1]) + sum;
+    }
+  }
+
+  for (let i = 0; i < PROC_W; i++) {
+    for (let j = 0; j < PROC_H; j++) {
+      const idx = j * PROC_W + i;
+      const x1 = Math.max(i - s2, 1);
+      const x2 = Math.min(i + s2, PROC_W - 1);
+      const y1 = Math.max(j - s2, 1);
+      const y2 = Math.min(j + s2, PROC_H - 1);
+      const count = (x2 - x1) * (y2 - y1);
+      const sum = integral[y2 * PROC_W + x2] - integral[y1 * PROC_W + x2] - integral[y2 * PROC_W + x1] + integral[y1 * PROC_W + x1];
+      bin[idx] = (gray[idx] * count <= sum * (1.0 - T)) ? 0 : 255;
+    }
+  }
+
+  const quads = findCandidateQuads(bin, PROC_W, PROC_H);
+  let bestDetection = null;
+
+  quads.forEach(q => {
+    const decoded = decodeTagPayload(gray, PROC_W, PROC_H, q);
+    if (decoded) {
+      bestDetection = { corners: q, ...decoded };
+    }
+  });
+
+  const scaleX = overlayCanvas.width / PROC_W;
+  const scaleY = overlayCanvas.height / PROC_H;
+
+  if (bestDetection) {
+    drawQuadHUD(bestDetection.corners, scaleX, scaleY, bestDetection.id);
+    computeVPSPose(bestDetection);
+  } else if (localized) {
+    decayLocalization();
+  }
+
+  const dt = performance.now() - t0;
+  $("latencyVal").textContent = `${Math.round(dt)}ms`;
+  $("fpsVal").textContent = `${Math.round(1000 / Math.max(1, dt))}`;
+
+  animFrameId = requestAnimationFrame(processCameraFrame);
+}
+
+function findCandidateQuads(bin, w, h) {
+  const visited = new Uint8Array(w * h);
+  const quads = [];
+
+  for (let y = 4; y < h - 4; y += 2) {
+    for (let x = 4; x < w - 4; x += 2) {
+      const idx = y * w + x;
+      if (bin[idx] === 0 && !visited[idx]) {
+        const contour = traceContour(bin, visited, w, h, x, y);
+        if (contour && contour.length > 20 && contour.length < 800) {
+          const poly = approximatePolygon(contour, 4.0);
+          if (poly.length === 4 && isConvexQuad(poly)) {
+            const area = polygonArea(poly);
+            if (area > 300 && area < (w * h * 0.8)) {
+              quads.push(poly);
+            }
+          }
+        }
+      }
+    }
+  }
+  return quads;
+}
+
+function traceContour(bin, visited, w, h, startX, startY) {
+  const pts = [];
+  let cx = startX, cy = startY;
+  const dx = [1, 1, 0, -1, -1, -1, 0, 1];
+  const dy = [0, 1, 1, 1, 0, -1, -1, -1];
+  let dir = 7;
+
+  for (let step = 0; step < 1200; step++) {
+    pts.push({ x: cx, y: cy });
+    visited[cy * w + cx] = 1;
+    let found = false;
+    for (let i = 0; i < 8; i++) {
+      const nd = (dir + i) % 8;
+      const nx = cx + dx[nd], ny = cy + dy[nd];
+      if (nx >= 0 && nx < w && ny >= 0 && ny < h && bin[ny * w + nx] === 0) {
+        cx = nx; cy = ny;
+        dir = (nd + 5) % 8;
+        found = true;
+        break;
+      }
+    }
+    if (!found || (cx === startX && cy === startY && pts.length > 4)) break;
+  }
+  return pts;
+}
+
+function approximatePolygon(pts, epsilon) {
+  if (pts.length < 3) return pts;
+  let dmax = 0, idx = 0;
+  const p1 = pts[0], p2 = pts[pts.length - 1];
+
+  for (let i = 1; i < pts.length - 1; i++) {
+    const d = perpendicularDistance(pts[i], p1, p2);
+    if (d > dmax) { idx = i; dmax = d; }
+  }
+
+  if (dmax > epsilon) {
+    const r1 = approximatePolygon(pts.slice(0, idx + 1), epsilon);
+    const r2 = approximatePolygon(pts.slice(idx), epsilon);
+    return r1.slice(0, r1.length - 1).concat(r2);
+  }
+  return [p1, p2];
+}
+
+function perpendicularDistance(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const mag = Math.hypot(dx, dy);
+  if (mag === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+  return Math.abs(dy * p.x - dx * p.y + b.x * a.y - b.y * a.x) / mag;
+}
+
+function polygonArea(q) {
+  return Math.abs((q[0].x*(q[1].y-q[3].y) + q[1].x*(q[2].y-q[0].y) + q[2].x*(q[3].y-q[1].y) + q[3].x*(q[0].y-q[2].y)) * 0.5);
+}
+
+function isConvexQuad(q) {
+  let sign = 0;
+  for (let i = 0; i < 4; i++) {
+    const p1 = q[i], p2 = q[(i + 1) % 4], p3 = q[(i + 2) % 4];
+    const cp = (p2.x - p1.x) * (p3.y - p2.y) - (p2.y - p1.y) * (p3.x - p2.x);
+    if (cp !== 0) {
+      if (sign === 0) sign = cp > 0 ? 1 : -1;
+      else if ((cp > 0 ? 1 : -1) !== sign) return false;
+    }
+  }
+  return true;
+}
+
+function decodeTagPayload(gray, w, h, quad) {
+  const N = 6;
+  const grid = [];
+  let blackBorderPasses = 0;
+
+  for (let r = 0; r < N; r++) {
+    grid[r] = [];
+    for (let c = 0; c < N; c++) {
+      const u = (c + 0.5) / N;
+      const v = (r + 0.5) / N;
+      const xTop = quad[0].x + u * (quad[1].x - quad[0].x);
+      const yTop = quad[0].y + u * (quad[1].y - quad[0].y);
+      const xBot = quad[3].x + u * (quad[2].x - quad[3].x);
+      const yBot = quad[3].y + u * (quad[2].y - quad[3].y);
+
+      const px = Math.round(xTop + v * (xBot - xTop));
+      const py = Math.round(yTop + v * (yBot - yTop));
+
+      if (px >= 0 && px < w && py >= 0 && py < h) {
+        grid[r][c] = gray[py * w + px] > 128 ? 1 : 0;
+      } else {
+        grid[r][c] = 0;
+      }
+
+      if ((r === 0 || r === N - 1 || c === 0 || c === N - 1) && grid[r][c] === 0) {
+        blackBorderPasses++;
+      }
+    }
+  }
+
+  if (blackBorderPasses < 16) return null;
+
+  let bits = 0;
+  for (let r = 1; r <= 4; r++) {
+    for (let c = 1; c <= 4; c++) {
+      bits = (bits << 1) | grid[r][c];
+    }
+  }
+
+  const matchedAnchor = mapData.anchors.find(a => (bits % 4) === a.numericId || bits === a.numericId);
+  if (matchedAnchor) {
+    return { id: matchedAnchor.id, numericId: matchedAnchor.numericId };
+  }
+  return null;
+}
+
+function computeVPSPose(detection) {
+  const anchor = mapData.anchors.find(a => a.id === detection.id);
+  if (!anchor) return;
+
+  const q = detection.corners;
+  const pxWidth = Math.hypot(q[1].x - q[0].x, q[1].y - q[0].y);
+  const pxHeight = Math.hypot(q[2].x - q[1].x, q[2].y - q[1].y);
+  const avgSide = (pxWidth + pxHeight) * 0.5;
+
+  const focalRatio = parseFloat($("focalRatio").value) || 1.25;
+  const fPixels = PROC_W * focalRatio;
+  const tagSize = anchor.size || 0.16;
+  const distance = (fPixels * tagSize) / avgSide;
+
+  const quadCenterX = (q[0].x + q[1].x + q[2].x + q[3].x) / 4;
+  const deltaPixelsX = quadCenterX - (PROC_W / 2);
+  const bearingRad = Math.atan2(deltaPixelsX, fPixels);
+  const bearingDeg = bearingRad * (180 / Math.PI);
+
+  const worldRad = (anchor.rotation + bearingDeg) * (Math.PI / 180);
+  phonePose.x = anchor.x + Math.sin(worldRad) * distance;
+  phonePose.y = anchor.y;
+  phonePose.z = anchor.z + Math.cos(worldRad) * distance;
+  phonePose.heading = (anchor.rotation + bearingDeg + 180) % 360;
+
+  localized = true;
+
+  $("statusDot").className = "status-dot active";
+  $("vpsState").textContent = "POSITION LOCKED";
+  $("vpsState").style.color = "var(--status-ok)";
+  $("currentAnchor").textContent = anchor.id;
+  $("positionText").textContent = `${phonePose.x.toFixed(2)}, ${phonePose.y.toFixed(2)}, ${phonePose.z.toFixed(2)}`;
+  $("xVal").textContent = phonePose.x.toFixed(2) + " m";
+  $("yVal").textContent = phonePose.y.toFixed(2) + " m";
+  $("zVal").textContent = phonePose.z.toFixed(2) + " m";
+  $("headingVal").textContent = Math.round(phonePose.heading).toString().padStart(3, "0") + "°";
+
+  drawMap();
+  renderObjects();
+}
+
+function decayLocalization() {
+  $("statusDot").className = "status-dot";
+  $("vpsState").textContent = "COARSE TRACKING";
+  $("vpsState").style.color = "var(--status-warn)";
+}
+
+function drawQuadHUD(q, sx, sy, id) {
+  octx.strokeStyle = "#00d0ff";
+  octx.lineWidth = 2;
+  octx.beginPath();
+  octx.moveTo(q[0].x * sx, q[0].y * sy);
+  octx.lineTo(q[1].x * sx, q[1].y * sy);
+  octx.lineTo(q[2].x * sx, q[2].y * sy);
+  octx.lineTo(q[3].x * sx, q[3].y * sy);
+  octx.closePath();
+  octx.stroke();
+
+  octx.fillStyle = "rgba(0, 208, 255, 0.15)";
+  octx.fill();
+
+  octx.fillStyle = "#00d0ff";
+  octx.font = "bold 13px monospace";
+  octx.fillText(`ID: ${id}`, q[0].x * sx, q[0].y * sy - 8);
+}
+
+function drawMap() {
+  const c = $("mapCanvas"), ctx = c.getContext("2d");
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.fillStyle = "#080b0f"; ctx.fillRect(0, 0, c.width, c.height);
+
+  const anchors = mapData.anchors;
+  const pts = [...anchors, { x: phonePose.x, z: phonePose.z }];
+  const minX = Math.min(...pts.map(p => p.x), 0), maxX = Math.max(...pts.map(p => p.x), 5);
+  const minZ = Math.min(...pts.map(p => p.z), 0), maxZ = Math.max(...pts.map(p => p.z), 5);
+  const pad = 35;
+  const sx = (c.width - 2 * pad) / Math.max(1, maxX - minX);
+  const sz = (c.height - 2 * pad) / Math.max(1, maxZ - minZ);
+  const scale = Math.min(sx, sz);
+  const mapX = x => pad + (x - minX) * scale;
+  const mapY = z => c.height - pad - (z - minZ) * scale;
+
+  ctx.strokeStyle = "rgba(64, 82, 105, 0.3)"; ctx.lineWidth = 1;
+  for (let x = 0; x < c.width; x += 25) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, c.height); ctx.stroke(); }
+  for (let y = 0; y < c.height; y += 25) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(c.width, y); ctx.stroke(); }
+
+  anchors.forEach(a => {
+    const x = mapX(a.x), y = mapY(a.z);
+    ctx.fillStyle = "#00d0ff"; ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#8b9bb0"; ctx.font = "10px monospace"; ctx.fillText(a.id, x + 8, y + 3);
+  });
+
+  if (localized) {
+    const x = mapX(phonePose.x), y = mapY(phonePose.z);
+    ctx.fillStyle = "#00ff88"; ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#00ff88"; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.sin(phonePose.heading * Math.PI / 180) * 18, y - Math.cos(phonePose.heading * Math.PI / 180) * 18);
+    ctx.stroke();
+  }
+}
+
+function renderObjects() {
+  $("arObjects").innerHTML = "";
+  if (!localized) return;
+  mapData.objects.forEach(o => {
+    const dx = o.x - phonePose.x, dz = o.z - phonePose.z;
+    const angle = Math.atan2(dx, dz) * 180 / Math.PI;
+    const left = 50 + angle * 0.6;
+    const distance = Math.hypot(dx, dz);
+    const top = 55 - (o.y - phonePose.y) * 25;
+    if (left < 5 || left > 95 || distance > 25) return;
+    const d = document.createElement("div");
+    d.className = `arObj ${o.type}`;
+    d.style.left = left + "%"; d.style.top = top + "%";
+    d.textContent = o.type === "fire" ? "CRITICAL HAZARD" : "PRIMARY EXIT";
+    $("arObjects").appendChild(d);
+  });
+}
+
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    video.srcObject = stream;
+    await video.play();
+    $("cameraPlaceholder").style.display = "none";
+    cancelAnimationFrame(animFrameId);
+    animFrameId = requestAnimationFrame(processCameraFrame);
+  } catch (e) {
+    alert("Camera initialization error: " + e.message);
+  }
+}
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.srcObject = null;
+  cancelAnimationFrame(animFrameId);
+  octx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  $("cameraPlaceholder").style.display = "flex";
+  decayLocalization();
+}
+
+function renderAnchorList() {
+  $("anchorList").innerHTML = "";
+  mapData.anchors.forEach(a => {
+    const div = document.createElement("div");
+    div.className = "anchor-row";
+    div.innerHTML = `<span>${a.id} [ID:${a.numericId}]</span><span>${a.x.toFixed(1)}, ${a.y.toFixed(1)}, ${a.z.toFixed(1)}m</span>`;
+    $("anchorList").appendChild(div);
+  });
+}
+
+function addAnchor() {
+  const count = mapData.anchors.length;
+  mapData.anchors.push({
+    id: `TAG_${count}`,
+    numericId: count,
+    x: (count % 2) * 3,
+    y: 0,
+    z: Math.floor(count / 2) * 3,
+    rotation: 0,
+    size: 0.16
   });
   renderAnchorList();
   drawMap();
 }
 
-function renderAnchorList(){
-  $("anchorList").innerHTML="";
-  mapData.anchors.forEach(a=>{
-    const div=document.createElement("div");
-    div.className="anchor";
-    div.innerHTML=`<span><b>${a.id}</b><br><span class="small">${a.x.toFixed(2)}, ${a.y.toFixed(2)}, ${a.z.toFixed(2)} m</span></span>
-      <button data-id="${a.id}" class="deleteAnchor">×</button>`;
-    $("anchorList").appendChild(div);
-  });
-  document.querySelectorAll(".deleteAnchor").forEach(b=>{
-    b.onclick=()=>{
-      if(mapData.anchors.length<=1) return alert("Keep at least one anchor.");
-      mapData.anchors=mapData.anchors.filter(a=>a.id!==b.dataset.id);
-      populateAnchors();
-    };
-  });
-}
-
-function drawMap(){
-  const c=$("mapCanvas"), ctx=c.getContext("2d");
-  ctx.clearRect(0,0,c.width,c.height);
-  ctx.fillStyle="#0d1115";ctx.fillRect(0,0,c.width,c.height);
-  const anchors=mapData.anchors;
-  const pts=[...anchors,{x:phonePose.x,z:phonePose.z}];
-  const minX=Math.min(...pts.map(p=>p.x),0), maxX=Math.max(...pts.map(p=>p.x),5);
-  const minZ=Math.min(...pts.map(p=>p.z),0), maxZ=Math.max(...pts.map(p=>p.z),5);
-  const pad=45, sx=(c.width-2*pad)/Math.max(1,maxX-minX), sz=(c.height-2*pad)/Math.max(1,maxZ-minZ);
-  const scale=Math.min(sx,sz);
-  const mapX=x=>pad+(x-minX)*scale, mapY=z=>c.height-pad-(z-minZ)*scale;
-
-  ctx.strokeStyle="#202831";ctx.lineWidth=1;
-  for(let x=0;x<c.width;x+=30){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,c.height);ctx.stroke()}
-  for(let y=0;y<c.height;y+=30){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(c.width,y);ctx.stroke()}
-
-  anchors.forEach(a=>{
-    const x=mapX(a.x),y=mapY(a.z);
-    ctx.fillStyle="#54c7ff";ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle="#fff";ctx.font="12px system-ui";ctx.fillText(a.id,x+12,y+4);
-  });
-
-  if(localized){
-    const x=mapX(phonePose.x),y=mapY(phonePose.z);
-    ctx.fillStyle="#5ee08a";ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle="#5ee08a";ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.sin(phonePose.heading*Math.PI/180)*25,y-Math.cos(phonePose.heading*Math.PI/180)*25);ctx.stroke();
-    ctx.fillStyle="#5ee08a";ctx.fillText("PHONE",x+12,y-8);
-  }
-}
-
-async function startCamera(){
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},
-      audio:false
-    });
-    video.srcObject=stream;
-    await video.play();
-    $("cameraPlaceholder").classList.add("hidden");
-    $("cameraStatus").innerHTML='<span class="good">Camera running</span>';
-  }catch(e){
-    $("cameraStatus").innerHTML='<span class="warn">Camera error: '+escapeHtml(e.message)+'</span>';
-  }
-}
-function stopCamera(){
-  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
-  video.srcObject=null;$("cameraStatus").textContent="Camera stopped";
-  $("cameraPlaceholder").classList.remove("hidden");
-}
-
-function detectAnchor(){
-  const id=$("anchorSelect").value;
-  const anchor=mapData.anchors.find(a=>a.id===id);
-  if(!anchor)return;
-
-  const distance=parseFloat($("distance").value)||2;
-  const bearing=parseFloat($("bearing").value)||0;
-  const rad=(anchor.rotation+bearing)*Math.PI/180;
-
-  // Simplified demo pose calculation.
-  // A real detector supplies distance, bearing and camera orientation
-  // from the detected tag corners.
-  phonePose.x=anchor.x + Math.sin(rad)*distance;
-  phonePose.y=anchor.y;
-  phonePose.z=anchor.z + Math.cos(rad)*distance;
-  phonePose.heading=(anchor.rotation+bearing+180)%360;
-
-  currentAnchor=anchor;
-  localized=true;
-
-  $("vpsState").textContent="LOCALIZED";
-  $("vpsState").className="good";
-  $("currentAnchor").textContent=anchor.id;
-  $("positionText").textContent=`${phonePose.x.toFixed(2)}, ${phonePose.y.toFixed(2)}, ${phonePose.z.toFixed(2)} m`;
-  $("confidenceText").textContent="95%";
-  $("targetBox").style.display="block";
-  $("xVal").textContent=phonePose.x.toFixed(2)+" m";
-  $("yVal").textContent=phonePose.y.toFixed(2)+" m";
-  $("zVal").textContent=phonePose.z.toFixed(2)+" m";
-  $("headingVal").textContent=Math.round(phonePose.heading)+"°";
-  drawMap();
-  renderObjects();
-}
-
-function clearVps(){
-  localized=false;currentAnchor=null;
-  $("vpsState").textContent="NOT LOCALIZED";
-  $("vpsState").className="";
-  $("currentAnchor").textContent="None";
-  $("positionText").textContent="—";
-  $("confidenceText").textContent="0%";
-  $("targetBox").style.display="none";
-  $("xVal").textContent="0.00 m";$("yVal").textContent="0.00 m";$("zVal").textContent="0.00 m";
-  $("headingVal").textContent="0°";
-  $("arObjects").innerHTML="";
-  drawMap();
-}
-
-function addAnchor(){
-  const id="TAG_"+String(mapData.anchors.length+1).padStart(3,"0");
-  const n=mapData.anchors.length;
-  mapData.anchors.push({id,x:(n%3)*3,y:0,z:Math.floor(n/3)*3,rotation:0,size:.2});
-  populateAnchors();
-}
-
-function addObject(type){
+function addObject(type) {
   mapData.objects.push({
-    id:crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()),
+    id: String(Date.now()),
     type,
-    x:phonePose.x,
-    y:phonePose.y,
-    z:phonePose.z+2
+    x: phonePose.x,
+    y: phonePose.y,
+    z: phonePose.z + 1.5
   });
-  saveLocal();
   renderObjects();
 }
 
-function renderObjects(){
-  $("arObjects").innerHTML="";
-  if(!localized)return;
-  mapData.objects.forEach(o=>{
-    // Simple screen projection demo. A production implementation should use
-    // ARKit/ARCore/WebXR camera matrices for true world-space placement.
-    const dx=o.x-phonePose.x, dz=o.z-phonePose.z;
-    const angle=Math.atan2(dx,dz)*180/Math.PI;
-    let left=50 + angle*0.55;
-    const distance=Math.sqrt(dx*dx+dz*dz);
-    let top=55 - (o.y-phonePose.y)*25;
-    if(left<4||left>96||distance>20)return;
-    const d=document.createElement("div");
-    d.className="arObj";
-    d.style.left=left+"%";d.style.top=top+"%";
-    d.textContent=(o.type==="fire"?"🔥 FIRE":"🚪 EXIT");
-    $("arObjects").appendChild(d);
-  });
-}
+$("startCamera").onclick = startCamera;
+$("stopCamera").onclick = stopCamera;
+$("addAnchor").onclick = addAnchor;
+$("addFire").onclick = () => addObject("fire");
+$("addExit").onclick = () => addObject("exit");
+$("clearObjects").onclick = () => { mapData.objects = []; renderObjects(); };
+$("downloadMap").onclick = () => {
+  const blob = new Blob([JSON.stringify(mapData, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "vps-map.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
 
-function saveLocal(){
-  localStorage.setItem("phoneVPSMap",JSON.stringify(mapData));
-  alert("VPS map saved on this device.");
-}
-
-function downloadMap(){
-  const blob=new Blob([JSON.stringify(mapData,null,2)],{type:"application/json"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);a.download="vps-map.json";a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-}
-
-function resetMap(){
-  if(!confirm("Reset the VPS map to the example aircraft bay?"))return;
-  mapData=structuredClone(defaultMap);clearVps();populateAnchors();
-  localStorage.removeItem("phoneVPSMap");
-}
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-}
-
-$("startCamera").onclick=startCamera;
-$("stopCamera").onclick=stopCamera;
-$("simulateDetect").onclick=detectAnchor;
-$("clearVps").onclick=clearVps;
-$("addAnchor").onclick=addAnchor;
-$("downloadMap").onclick=downloadMap;
-$("saveLocal").onclick=saveLocal;
-$("resetMap").onclick=resetMap;
-$("addFire").onclick=()=>addObject("fire");
-$("addExit").onclick=()=>addObject("exit");
-$("clearObjects").onclick=()=>{mapData.objects=[];saveLocal();renderObjects();};
-
-populateAnchors();
+renderAnchorList();
+drawMap();
 </script>
 </body>
 </html>
