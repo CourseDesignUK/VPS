@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Phone VPS Prototype</title>
+<style>
+:root { --bg:#101317; --panel:#191e24; --line:#303841; --text:#f3f5f7; --muted:#aeb7c2; --accent:#54c7ff; --ok:#5ee08a; --warn:#ffd166; }
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between}
+h1{font-size:20px;margin:0}.wrap{display:grid;grid-template-columns:1fr 330px;min-height:calc(100vh - 58px)}
+main{position:relative;min-height:calc(100vh - 58px);overflow:hidden;background:#050607}
+video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
+#cameraPlaceholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:30px;color:var(--muted)}
+#cameraPlaceholder.hidden{display:none}
+.crosshair{position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);pointer-events:none}
+.crosshair:before,.crosshair:after{content:"";position:absolute;background:var(--accent)}
+.crosshair:before{width:70px;height:2px;top:34px;left:0}.crosshair:after{height:70px;width:2px;left:34px;top:0}
+#targetBox{position:absolute;border:2px solid var(--ok);width:150px;height:150px;left:50%;top:50%;transform:translate(-50%,-50%);display:none;pointer-events:none}
+.panel{background:var(--panel);border-left:1px solid var(--line);padding:16px;overflow:auto}
+section{border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:12px}
+h2{font-size:15px;margin:0 0 10px}.row{display:flex;gap:8px;margin:8px 0}.row>*{flex:1}
+button,select,input{font:inherit;color:var(--text);background:#242b33;border:1px solid #3b4650;border-radius:8px;padding:9px}
+button{cursor:pointer}button:hover{filter:brightness(1.12)}button.primary{background:#12688c;border-color:#1b91c0}button.danger{background:#682b31}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+.status{padding:9px;border-radius:8px;background:#10151a;border:1px solid var(--line);font-size:13px}
+.good{color:var(--ok)}.warn{color:var(--warn)}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:7px}.stat div{background:#11161b;border:1px solid var(--line);padding:8px;border-radius:8px;font-size:12px}.stat b{display:block;font-size:16px;margin-top:2px}
+#mapCanvas{width:100%;height:220px;background:#0d1115;border:1px solid var(--line);border-radius:8px}
+.anchor{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}.anchor:last-child{border:0}
+.small{font-size:11px;color:var(--muted)}.hidden{display:none!important}
+#overlay{position:absolute;left:16px;top:16px;background:rgba(10,14,18,.82);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:190px;font-size:12px;backdrop-filter:blur(8px)}
+#arObjects{position:absolute;inset:0;pointer-events:none}
+.arObj{position:absolute;transform:translate(-50%,-50%);padding:8px 11px;border-radius:9px;background:rgba(10,14,18,.86);border:1px solid var(--accent);box-shadow:0 4px 20px #0008;font-weight:700;white-space:nowrap}
+footer{font-size:11px;color:var(--muted);line-height:1.4}
+@media(max-width:800px){.wrap{grid-template-columns:1fr}.panel{border-left:0;border-top:1px solid var(--line);max-height:none}main{height:58vh;min-height:360px}.panel{padding-bottom:30px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>📱 Phone VPS Prototype</h1>
+  <div class="small">Camera + visual anchors + local map</div>
+</header>
+
+<div class="wrap">
+<main id="cameraArea">
+  <video id="video" playsinline muted></video>
+  <div id="cameraPlaceholder">
+    <div>
+      <h2>Phone VPS</h2>
+      <p>Start the camera, then point at a printed anchor.</p>
+      <p class="small">This prototype provides the map/UI framework. True AprilTag pose detection requires a detector library or native AR API.</p>
+    </div>
+  </div>
+  <div class="crosshair"></div>
+  <div id="targetBox"></div>
+  <div id="overlay">
+    <b id="vpsState">NOT LOCALIZED</b><br>
+    Anchor: <span id="currentAnchor">None</span><br>
+    Position: <span id="positionText">—</span><br>
+    Confidence: <span id="confidenceText">0%</span>
+  </div>
+  <div id="arObjects"></div>
+</main>
+
+<aside class="panel">
+<section>
+  <h2>1. Camera</h2>
+  <div class="row">
+    <button id="startCamera" class="primary">Start camera</button>
+    <button id="stopCamera">Stop</button>
+  </div>
+  <div class="status" id="cameraStatus">Camera stopped</div>
+</section>
+
+<section>
+  <h2>2. VPS mode</h2>
+  <label>Selected anchor</label>
+  <select id="anchorSelect"></select>
+  <div class="row">
+    <button id="simulateDetect" class="primary">Simulate detection</button>
+    <button id="clearVps">Clear</button>
+  </div>
+  <div class="small">For the first prototype, simulation lets you test the coordinate system without installing an AprilTag detector.</div>
+</section>
+
+<section>
+  <h2>3. Position</h2>
+  <div class="stat">
+    <div>X<b id="xVal">0.00 m</b></div>
+    <div>Y<b id="yVal">0.00 m</b></div>
+    <div>Z<b id="zVal">0.00 m</b></div>
+    <div>Heading<b id="headingVal">0°</b></div>
+  </div>
+  <label>Simulated distance from anchor (m)</label>
+  <input id="distance" type="number" value="2" min="0.1" step="0.1">
+  <label>Simulated bearing from anchor (degrees)</label>
+  <input id="bearing" type="number" value="0" step="1">
+</section>
+
+<section>
+  <h2>4. Local map</h2>
+  <canvas id="mapCanvas" width="600" height="330"></canvas>
+  <div class="row">
+    <button id="addAnchor">Add anchor</button>
+    <button id="downloadMap">Download map</button>
+  </div>
+  <div id="anchorList"></div>
+</section>
+
+<section>
+  <h2>5. AR training objects</h2>
+  <div class="row">
+    <button id="addFire">🔥 Add fire</button>
+    <button id="addExit">🚪 Add exit</button>
+  </div>
+  <div class="row">
+    <button id="clearObjects">Clear objects</button>
+  </div>
+  <div class="small">Objects are stored in the same local coordinate system as the VPS anchors.</div>
+</section>
+
+<section>
+  <h2>6. Save / load</h2>
+  <div class="row">
+    <button id="saveLocal">Save locally</button>
+    <button id="resetMap" class="danger">Reset map</button>
+  </div>
+</section>
+
+<footer>
+  Prototype only. Camera access normally requires HTTPS or localhost. A production version should use a real AprilTag/ArUco detector and preferably ARKit/ARCore/WebXR for continuous phone pose tracking.
+</footer>
+</aside>
+</div>
+
+<script>
+/* ============================================================
+   PHONE VPS PROTOTYPE
+   ============================================================
+   Coordinate system:
+     X = left/right
+     Y = vertical
+     Z = forward/back
+   All distances are metres.
+   ============================================================ */
+
+const defaultMap = {
+  name: "Aircraft Training Bay",
+  anchors: [
+    {id:"TAG_001", x:0, y:0, z:0, rotation:0, size:0.20},
+    {id:"TAG_002", x:5, y:0, z:0, rotation:90, size:0.20},
+    {id:"TAG_003", x:5, y:0, z:5, rotation:180, size:0.20},
+    {id:"TAG_004", x:0, y:0, z:5, rotation:270, size:0.20}
+  ],
+  objects: []
+};
+
+let mapData = JSON.parse(localStorage.getItem("phoneVPSMap") || "null") || structuredClone(defaultMap);
+let stream = null;
+let localized = false;
+let currentAnchor = null;
+let phonePose = {x:0,y:0,z:0,heading:0};
+
+const $ = id => document.getElementById(id);
+const video = $("video");
+
+function populateAnchors(){
+  $("anchorSelect").innerHTML = "";
+  mapData.anchors.forEach(a=>{
+    const o=document.createElement("option");
+    o.value=a.id;
+    o.textContent=`${a.id}  (${a.x}, ${a.y}, ${a.z})`;
+    $("anchorSelect").appendChild(o);
+  });
+  renderAnchorList();
+  drawMap();
+}
+
+function renderAnchorList(){
+  $("anchorList").innerHTML="";
+  mapData.anchors.forEach(a=>{
+    const div=document.createElement("div");
+    div.className="anchor";
+    div.innerHTML=`<span><b>${a.id}</b><br><span class="small">${a.x.toFixed(2)}, ${a.y.toFixed(2)}, ${a.z.toFixed(2)} m</span></span>
+      <button data-id="${a.id}" class="deleteAnchor">×</button>`;
+    $("anchorList").appendChild(div);
+  });
+  document.querySelectorAll(".deleteAnchor").forEach(b=>{
+    b.onclick=()=>{
+      if(mapData.anchors.length<=1) return alert("Keep at least one anchor.");
+      mapData.anchors=mapData.anchors.filter(a=>a.id!==b.dataset.id);
+      populateAnchors();
+    };
+  });
+}
+
+function drawMap(){
+  const c=$("mapCanvas"), ctx=c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.fillStyle="#0d1115";ctx.fillRect(0,0,c.width,c.height);
+  const anchors=mapData.anchors;
+  const pts=[...anchors,{x:phonePose.x,z:phonePose.z}];
+  const minX=Math.min(...pts.map(p=>p.x),0), maxX=Math.max(...pts.map(p=>p.x),5);
+  const minZ=Math.min(...pts.map(p=>p.z),0), maxZ=Math.max(...pts.map(p=>p.z),5);
+  const pad=45, sx=(c.width-2*pad)/Math.max(1,maxX-minX), sz=(c.height-2*pad)/Math.max(1,maxZ-minZ);
+  const scale=Math.min(sx,sz);
+  const mapX=x=>pad+(x-minX)*scale, mapY=z=>c.height-pad-(z-minZ)*scale;
+
+  ctx.strokeStyle="#202831";ctx.lineWidth=1;
+  for(let x=0;x<c.width;x+=30){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,c.height);ctx.stroke()}
+  for(let y=0;y<c.height;y+=30){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(c.width,y);ctx.stroke()}
+
+  anchors.forEach(a=>{
+    const x=mapX(a.x),y=mapY(a.z);
+    ctx.fillStyle="#54c7ff";ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#fff";ctx.font="12px system-ui";ctx.fillText(a.id,x+12,y+4);
+  });
+
+  if(localized){
+    const x=mapX(phonePose.x),y=mapY(phonePose.z);
+    ctx.fillStyle="#5ee08a";ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle="#5ee08a";ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.sin(phonePose.heading*Math.PI/180)*25,y-Math.cos(phonePose.heading*Math.PI/180)*25);ctx.stroke();
+    ctx.fillStyle="#5ee08a";ctx.fillText("PHONE",x+12,y-8);
+  }
+}
+
+async function startCamera(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},
+      audio:false
+    });
+    video.srcObject=stream;
+    await video.play();
+    $("cameraPlaceholder").classList.add("hidden");
+    $("cameraStatus").innerHTML='<span class="good">Camera running</span>';
+  }catch(e){
+    $("cameraStatus").innerHTML='<span class="warn">Camera error: '+escapeHtml(e.message)+'</span>';
+  }
+}
+function stopCamera(){
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  video.srcObject=null;$("cameraStatus").textContent="Camera stopped";
+  $("cameraPlaceholder").classList.remove("hidden");
+}
+
+function detectAnchor(){
+  const id=$("anchorSelect").value;
+  const anchor=mapData.anchors.find(a=>a.id===id);
+  if(!anchor)return;
+
+  const distance=parseFloat($("distance").value)||2;
+  const bearing=parseFloat($("bearing").value)||0;
+  const rad=(anchor.rotation+bearing)*Math.PI/180;
+
+  // Simplified demo pose calculation.
+  // A real detector supplies distance, bearing and camera orientation
+  // from the detected tag corners.
+  phonePose.x=anchor.x + Math.sin(rad)*distance;
+  phonePose.y=anchor.y;
+  phonePose.z=anchor.z + Math.cos(rad)*distance;
+  phonePose.heading=(anchor.rotation+bearing+180)%360;
+
+  currentAnchor=anchor;
+  localized=true;
+
+  $("vpsState").textContent="LOCALIZED";
+  $("vpsState").className="good";
+  $("currentAnchor").textContent=anchor.id;
+  $("positionText").textContent=`${phonePose.x.toFixed(2)}, ${phonePose.y.toFixed(2)}, ${phonePose.z.toFixed(2)} m`;
+  $("confidenceText").textContent="95%";
+  $("targetBox").style.display="block";
+  $("xVal").textContent=phonePose.x.toFixed(2)+" m";
+  $("yVal").textContent=phonePose.y.toFixed(2)+" m";
+  $("zVal").textContent=phonePose.z.toFixed(2)+" m";
+  $("headingVal").textContent=Math.round(phonePose.heading)+"°";
+  drawMap();
+  renderObjects();
+}
+
+function clearVps(){
+  localized=false;currentAnchor=null;
+  $("vpsState").textContent="NOT LOCALIZED";
+  $("vpsState").className="";
+  $("currentAnchor").textContent="None";
+  $("positionText").textContent="—";
+  $("confidenceText").textContent="0%";
+  $("targetBox").style.display="none";
+  $("xVal").textContent="0.00 m";$("yVal").textContent="0.00 m";$("zVal").textContent="0.00 m";
+  $("headingVal").textContent="0°";
+  $("arObjects").innerHTML="";
+  drawMap();
+}
+
+function addAnchor(){
+  const id="TAG_"+String(mapData.anchors.length+1).padStart(3,"0");
+  const n=mapData.anchors.length;
+  mapData.anchors.push({id,x:(n%3)*3,y:0,z:Math.floor(n/3)*3,rotation:0,size:.2});
+  populateAnchors();
+}
+
+function addObject(type){
+  mapData.objects.push({
+    id:crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()),
+    type,
+    x:phonePose.x,
+    y:phonePose.y,
+    z:phonePose.z+2
+  });
+  saveLocal();
+  renderObjects();
+}
+
+function renderObjects(){
+  $("arObjects").innerHTML="";
+  if(!localized)return;
+  mapData.objects.forEach(o=>{
+    // Simple screen projection demo. A production implementation should use
+    // ARKit/ARCore/WebXR camera matrices for true world-space placement.
+    const dx=o.x-phonePose.x, dz=o.z-phonePose.z;
+    const angle=Math.atan2(dx,dz)*180/Math.PI;
+    let left=50 + angle*0.55;
+    const distance=Math.sqrt(dx*dx+dz*dz);
+    let top=55 - (o.y-phonePose.y)*25;
+    if(left<4||left>96||distance>20)return;
+    const d=document.createElement("div");
+    d.className="arObj";
+    d.style.left=left+"%";d.style.top=top+"%";
+    d.textContent=(o.type==="fire"?"🔥 FIRE":"🚪 EXIT");
+    $("arObjects").appendChild(d);
+  });
+}
+
+function saveLocal(){
+  localStorage.setItem("phoneVPSMap",JSON.stringify(mapData));
+  alert("VPS map saved on this device.");
+}
+
+function downloadMap(){
+  const blob=new Blob([JSON.stringify(mapData,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="vps-map.json";a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+function resetMap(){
+  if(!confirm("Reset the VPS map to the example aircraft bay?"))return;
+  mapData=structuredClone(defaultMap);clearVps();populateAnchors();
+  localStorage.removeItem("phoneVPSMap");
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+}
+
+$("startCamera").onclick=startCamera;
+$("stopCamera").onclick=stopCamera;
+$("simulateDetect").onclick=detectAnchor;
+$("clearVps").onclick=clearVps;
+$("addAnchor").onclick=addAnchor;
+$("downloadMap").onclick=downloadMap;
+$("saveLocal").onclick=saveLocal;
+$("resetMap").onclick=resetMap;
+$("addFire").onclick=()=>addObject("fire");
+$("addExit").onclick=()=>addObject("exit");
+$("clearObjects").onclick=()=>{mapData.objects=[];saveLocal();renderObjects();};
+
+populateAnchors();
+</script>
+</body>
+</html>
