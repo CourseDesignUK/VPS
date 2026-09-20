@@ -2,568 +2,298 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>XR Tactical VPS Platform</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Tactical Field Client - VPS Node</title>
 <style>
 :root {
-  --bg-primary: #0a0d12;
-  --bg-secondary: #121820;
-  --bg-card: rgba(18, 24, 32, 0.85);
-  --border-color: rgba(64, 82, 105, 0.45);
-  --border-focus: #00d0ff;
-  --text-primary: #e6edf3;
-  --text-secondary: #8b9bb0;
-  --accent-cyan: #00d0ff;
-  --accent-blue: #007acc;
-  --status-ok: #00ff88;
-  --status-warn: #ffb84d;
-  --status-err: #ff4d4d;
-  --font-mono: "SF Mono", "Fira Code", "Courier New", monospace;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --bg: #07090c;
+  --panel: rgba(14, 18, 24, 0.92);
+  --border: rgba(64, 82, 105, 0.4);
+  --accent: #00d0ff;
+  --text: #e6edf3;
+  --muted: #8b9bb0;
+  --ok: #00ff88;
+  --warn: #ffb84d;
+  --err: #ff4d4d;
+  --mono: "SF Mono", "Fira Code", monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  overflow: hidden;
-  height: 100vh;
-}
-
-header {
-  height: 52px;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: 13px;
-  color: var(--accent-cyan);
-}
-
-.badge-tag {
-  background: rgba(0, 208, 255, 0.12);
-  border: 1px solid var(--accent-cyan);
-  color: var(--accent-cyan);
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-family: var(--font-mono);
-  font-weight: 600;
-}
-
-.wrap {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  height: calc(100vh - 52px);
-}
-
-main {
-  position: relative;
-  background: #020406;
-  overflow: hidden;
-}
-
-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-#detectionCanvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-}
-
-#cameraPlaceholder {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle at center, #141c24 0%, #080b0e 100%);
-  color: var(--text-secondary);
-  gap: 10px;
-}
-
-.hud-reticle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 60px;
-  height: 60px;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  border: 1px dashed rgba(0, 208, 255, 0.3);
-  border-radius: 50%;
-}
-
-.hud-reticle::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 4px;
-  height: 4px;
-  background: var(--accent-cyan);
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  box-shadow: 0 0 8px var(--accent-cyan);
-}
-
-#telemetryHud {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 12px 16px;
-  backdrop-filter: blur(12px);
-  min-width: 220px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-}
-
-.hud-title {
-  font-size: 11px;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  letter-spacing: 0.05em;
-  margin-bottom: 6px;
-}
-
-.hud-status {
-  font-size: 13px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--status-err);
-}
-
-.status-dot.active {
-  background: var(--status-ok);
-  box-shadow: 0 0 8px var(--status-ok);
-}
-
-.telemetry-row {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-.telemetry-row span {
-  color: var(--text-primary);
-}
-
-.sidebar {
-  background: var(--bg-secondary);
-  border-left: 1px solid var(--border-color);
-  padding: 16px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.panel-block {
-  background: rgba(10, 13, 18, 0.6);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 14px;
-}
-
-.panel-block h2 {
-  font-size: 11px;
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  letter-spacing: 0.06em;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.row {
-  display: flex;
-  gap: 8px;
-  margin: 6px 0;
-}
-
-.row > * { flex: 1; }
-
-button, select, input {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  color: var(--text-primary);
-  background: #18202a;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 8px 10px;
-  outline: none;
-  transition: all 0.15s ease;
-}
-
-button {
-  cursor: pointer;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-}
-
-button:hover {
-  background: #222d3a;
-  border-color: var(--border-focus);
-}
-
-button.primary {
-  background: rgba(0, 208, 255, 0.15);
-  border-color: var(--accent-cyan);
-  color: var(--accent-cyan);
-}
-
-button.primary:hover {
-  background: rgba(0, 208, 255, 0.25);
-  box-shadow: 0 0 10px rgba(0, 208, 255, 0.2);
-}
-
-button.danger {
-  background: rgba(255, 77, 77, 0.12);
-  border-color: var(--status-err);
-  color: var(--status-err);
-}
-
-label {
-  display: block;
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin: 8px 0 4px;
-  font-family: var(--font-mono);
-}
-
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.stat-item {
-  background: #10151c;
-  border: 1px solid var(--border-color);
-  padding: 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-family: var(--font-mono);
-  color: var(--text-secondary);
-}
-
-.stat-item b {
-  display: block;
-  font-size: 14px;
-  color: var(--accent-cyan);
-  margin-top: 2px;
-}
-
-#mapCanvas {
-  width: 100%;
-  height: 200px;
-  background: #080b0f;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  display: block;
-}
-
-.anchor-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 10px;
-}
-
-.anchor-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #10151c;
-  border: 1px solid var(--border-color);
-  padding: 6px 10px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-family: var(--font-mono);
-}
-
-#arObjects {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.arObj {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  padding: 5px 9px;
-  border-radius: 4px;
-  background: rgba(10, 13, 18, 0.9);
-  border: 1px solid var(--border-focus);
-  box-shadow: 0 0 12px rgba(0, 208, 255, 0.25);
-  font-weight: 700;
-  font-size: 11px;
-  font-family: var(--font-mono);
-  white-space: nowrap;
-}
-
-.arObj.fire { border-color: var(--status-err); color: var(--status-err); }
-.arObj.exit { border-color: var(--status-ok); color: var(--status-ok); }
-
-@media (max-width: 850px) {
-  .wrap { grid-template-columns: 1fr; height: auto; }
-  main { height: 48vh; min-height: 320px; }
-  body { overflow: auto; }
-}
+body { background: var(--bg); color: var(--text); font-family: var(--sans); overflow: hidden; height: 100vh; }
+#viewport { position: absolute; inset: 0; }
+video { width: 100%; height: 100%; object-fit: cover; display: block; }
+canvas#hudOverlay { position: absolute; inset: 0; pointer-events: none; width: 100%; height: 100%; }
+#ui { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 16px; }
+.top-bar { display: flex; justify-content: space-between; align-items: center; }
+.badge { background: var(--panel); border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; font-size: 11px; font-family: var(--mono); font-weight: 700; }
+.hud-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 14px; width: 310px; backdrop-filter: blur(10px); }
+.hud-title { font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing: .06em; margin-bottom: 6px; font-family: var(--mono); }
+.metric { font-family: var(--mono); font-size: 12px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+.metric span { color: var(--accent); }
+.controls { pointer-events: auto; display: flex; flex-direction: column; gap: 8px; }
+button { background: #18202a; border: 1px solid var(--border); color: var(--text); font-size: 12px; font-weight: 600; padding: 10px 14px; border-radius: 4px; cursor: pointer; }
+button.primary { background: rgba(0, 208, 255, 0.15); border-color: var(--accent); color: var(--accent); }
+input { background: #121820; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 4px; font-family: var(--mono); font-size: 11px; }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="brand">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10"></circle>
-      <line x1="12" y1="2" x2="12" y2="6"></line>
-      <line x1="12" y1="18" x2="12" y2="22"></line>
-      <line x1="2" y1="12" x2="6" y2="12"></line>
-      <line x1="18" y1="12" x2="22" y2="12"></line>
-    </svg>
-    <span>VPS Operational Engine</span>
+<div id="viewport">
+  <video id="vStream" playsinline muted autoplay></video>
+  <canvas id="hudOverlay"></canvas>
+</div>
+
+<div id="ui">
+  <div class="top-bar">
+    <div class="badge" id="nodeCallsign" style="color:var(--accent);">NODE: INITIALIZING</div>
+    <div class="badge" id="telemetryState" style="color:var(--warn);">LINK: OFFLINE</div>
   </div>
-  <div class="badge-tag" id="engineStatus">CORE: ONLINE</div>
-</header>
 
-<div class="wrap">
-  <main id="cameraArea">
-    <video id="video" playsinline muted></video>
-    <canvas id="detectionCanvas"></canvas>
-    
-    <div id="cameraPlaceholder">
-      <p style="font-family: var(--font-mono); font-size: 13px;">OPTICAL SENSOR DISCONNECTED</p>
-      <p style="font-size: 12px;">Initialize video capture to track spatial visual tags.</p>
-    </div>
+  <div class="hud-panel">
+    <div class="hud-title">Local 6-DoF Metric Pose</div>
+    <div class="metric">Metric Pose: <span id="posVec">0.00, 0.00, 0.00</span></div>
+    <div class="metric">Heading: <span id="yawDeg">000.0°</span></div>
+    <div class="metric">Anchor: <span id="activeAnchor">NONE</span></div>
+    <div class="metric">Packets TX: <span id="txCount">0</span></div>
+  </div>
 
-    <div class="hud-reticle"></div>
-
-    <div id="telemetryHud">
-      <div class="hud-title">Navigation Pose Telemetry</div>
-      <div class="hud-status">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="vpsState">SEARCHING</span>
-      </div>
-      <div class="telemetry-row">Ref Anchor: <span id="currentAnchor">NONE</span></div>
-      <div class="telemetry-row">Coords (X,Y,Z): <span id="positionText">0.00, 0.00, 0.00</span></div>
-      <div class="telemetry-row">FPS: <span id="fpsVal">00</span> | Process: <span id="latencyVal">0ms</span></div>
-    </div>
-
-    <div id="arObjects"></div>
-  </main>
-
-  <aside class="sidebar">
-    <section class="panel-block">
-      <h2>Hardware Feed</h2>
-      <div class="row">
-        <button id="startCamera" class="primary">Engage Sensor</button>
-        <button id="stopCamera">Disengage</button>
-      </div>
-    </section>
-
-    <section class="panel-block">
-      <h2>Calibration & Intrinsics</h2>
-      <label>FOCAL RATIO (FX / WIDTH)</label>
-      <input id="focalRatio" type="number" value="1.25" step="0.05">
-    </section>
-
-    <section class="panel-block">
-      <h2>Computed Metric State</h2>
-      <div class="stat-grid">
-        <div class="stat-item">POS X<b id="xVal">0.00 m</b></div>
-        <div class="stat-item">POS Y<b id="yVal">0.00 m</b></div>
-        <div class="stat-item">POS Z<b id="zVal">0.00 m</b></div>
-        <div class="stat-item">HEADING<b id="headingVal">000°</b></div>
-      </div>
-    </section>
-
-    <section class="panel-block">
-      <h2>Spatial Map Overview</h2>
-      <canvas id="mapCanvas" width="600" height="330"></canvas>
-      <div class="row" style="margin-top: 10px;">
-        <button id="addAnchor">Add Tag</button>
-        <button id="downloadMap">Export Map</button>
-      </div>
-      <div class="anchor-list" id="anchorList"></div>
-    </section>
-
-    <section class="panel-block">
-      <h2>AR Scene Nodes</h2>
-      <div class="row">
-        <button id="addFire" class="danger">Add Hazard</button>
-        <button id="addExit">Add Exit Waypoint</button>
-      </div>
-      <button id="clearObjects" style="width: 100%; margin-top: 6px;">Clear Nodes</button>
-    </section>
-  </aside>
+  <div class="controls">
+    <input type="text" id="wsHost" placeholder="ws://192.168.1.X:8080 (Leave blank for local bus)">
+    <button id="btnStart" class="primary">Engage Sensor & Join Grid</button>
+  </div>
 </div>
 
 <script>
-const defaultMap = {
-  name: "Airfield Bay Grid",
+const FACILITY_MAP = {
   anchors: [
-    { id: "TAG_0", numericId: 0, x: 0.0, y: 0.0, z: 0.0, rotation: 0, size: 0.16 },
-    { id: "TAG_1", numericId: 1, x: 4.0, y: 0.0, z: 0.0, rotation: 90, size: 0.16 },
-    { id: "TAG_2", numericId: 2, x: 4.0, y: 0.0, z: 4.0, rotation: 180, size: 0.16 },
-    { id: "TAG_3", numericId: 3, x: 0.0, y: 0.0, z: 4.0, rotation: 270, size: 0.16 }
-  ],
-  objects: []
+    { id: "TAG_0", code: 0, x: 0.0, y: 0.0, z: 0.0, yaw: 0,   size: 0.16 },
+    { id: "TAG_1", code: 1, x: 4.0, y: 0.0, z: 0.0, yaw: 90,  size: 0.16 },
+    { id: "TAG_2", code: 2, x: 4.0, y: 0.0, z: 4.0, yaw: 180, size: 0.16 },
+    { id: "TAG_3", code: 3, x: 0.0, y: 0.0, z: 4.0, yaw: 270, size: 0.16 }
+  ]
 };
 
-let mapData = JSON.parse(localStorage.getItem("phoneVPSMap") || "null") || structuredClone(defaultMap);
-let stream = null;
-let localized = false;
-let phonePose = { x: 0, y: 0, z: 0, heading: 0 };
-let animFrameId = null;
+// Generate or retrieve persistent callsign
+const DEVICE_ID = localStorage.getItem("vps_node_id") || 
+  ("NODE_" + Math.random().toString(36).substring(2, 6).toUpperCase());
+localStorage.setItem("vps_node_id", DEVICE_ID);
+document.getElementById("nodeCallsign").textContent = `ID: ${DEVICE_ID}`;
 
-const $ = id => document.getElementById(id);
-const video = $("video");
-const overlayCanvas = $("detectionCanvas");
-const octx = overlayCanvas.getContext("2d");
+let rawPose = { x: 0, y: 0, z: 0, yaw: 0 };
+let filteredPose = { x: 0, y: 0, z: 0, yaw: 0 };
+let filterAlpha = 0.3;
+let txCounter = 0;
+let ws = null;
+let broadcastChan = null;
 
-const procCanvas = document.createElement("canvas");
-const pctx = procCanvas.getContext("2d", { willReadFrequently: true });
+const video = document.getElementById("vStream");
+const hud = document.getElementById("hudOverlay");
+const hctx = hud.getContext("2d");
+
+const pCanvas = document.createElement("canvas");
+const pctx = pCanvas.getContext("2d", { willReadFrequently: true });
 const PROC_W = 320;
 let PROC_H = 240;
 
-function processCameraFrame() {
-  if (!stream || video.readyState !== video.HAVE_ENOUGH_DATA) {
-    animFrameId = requestAnimationFrame(processCameraFrame);
-    return;
-  }
+function initTelemetryPipe() {
+  broadcastChan = new BroadcastChannel("vps_telemetry_bus");
+  const hostVal = document.getElementById("wsHost").value.trim();
+  const wsTarget = hostVal || (location.protocol === "http:" ? `ws://${location.hostname}:8080` : null);
 
-  const t0 = performance.now();
-
-  if (overlayCanvas.width !== video.videoWidth || overlayCanvas.height !== video.videoHeight) {
-    overlayCanvas.width = video.videoWidth;
-    overlayCanvas.height = video.videoHeight;
-    PROC_H = Math.round((video.videoHeight / video.videoWidth) * PROC_W);
-    procCanvas.width = PROC_W;
-    procCanvas.height = PROC_H;
-  }
-
-  octx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-  pctx.drawImage(video, 0, 0, PROC_W, PROC_H);
-
-  const imgData = pctx.getImageData(0, 0, PROC_W, PROC_H);
-  const data = imgData.data;
-  const gray = new Uint8Array(PROC_W * PROC_H);
-
-  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
-    gray[j] = (data[i] * 77 + data[i + 1] * 150 + data[i + 2] * 29) >> 8;
-  }
-
-  const bin = new Uint8Array(PROC_W * PROC_H);
-  const S = Math.floor(PROC_W / 8);
-  const T = 0.15;
-  const s2 = Math.floor(S / 2);
-
-  const integral = new Int32Array(PROC_W * PROC_H);
-  for (let i = 0; i < PROC_W; i++) {
-    let sum = 0;
-    for (let j = 0; j < PROC_H; j++) {
-      const idx = j * PROC_W + i;
-      sum += gray[idx];
-      integral[idx] = (i === 0 ? 0 : integral[idx - 1]) + sum;
+  if (wsTarget) {
+    try {
+      ws = new WebSocket(wsTarget);
+      ws.onopen = () => {
+        document.getElementById("telemetryState").textContent = "LINK: WS ACTIVE";
+        document.getElementById("telemetryState").style.color = "var(--ok)";
+      };
+      ws.onerror = () => fallbackToBroadcast();
+      ws.onclose = () => fallbackToBroadcast();
+    } catch(e) {
+      fallbackToBroadcast();
     }
+  } else {
+    fallbackToBroadcast();
   }
-
-  for (let i = 0; i < PROC_W; i++) {
-    for (let j = 0; j < PROC_H; j++) {
-      const idx = j * PROC_W + i;
-      const x1 = Math.max(i - s2, 1);
-      const x2 = Math.min(i + s2, PROC_W - 1);
-      const y1 = Math.max(j - s2, 1);
-      const y2 = Math.min(j + s2, PROC_H - 1);
-      const count = (x2 - x1) * (y2 - y1);
-      const sum = integral[y2 * PROC_W + x2] - integral[y1 * PROC_W + x2] - integral[y2 * PROC_W + x1] + integral[y1 * PROC_W + x1];
-      bin[idx] = (gray[idx] * count <= sum * (1.0 - T)) ? 0 : 255;
-    }
-  }
-
-  const quads = findCandidateQuads(bin, PROC_W, PROC_H);
-  let bestDetection = null;
-
-  quads.forEach(q => {
-    const decoded = decodeTagPayload(gray, PROC_W, PROC_H, q);
-    if (decoded) {
-      bestDetection = { corners: q, ...decoded };
-    }
-  });
-
-  const scaleX = overlayCanvas.width / PROC_W;
-  const scaleY = overlayCanvas.height / PROC_H;
-
-  if (bestDetection) {
-    drawQuadHUD(bestDetection.corners, scaleX, scaleY, bestDetection.id);
-    computeVPSPose(bestDetection);
-  } else if (localized) {
-    decayLocalization();
-  }
-
-  const dt = performance.now() - t0;
-  $("latencyVal").textContent = `${Math.round(dt)}ms`;
-  $("fpsVal").textContent = `${Math.round(1000 / Math.max(1, dt))}`;
-
-  animFrameId = requestAnimationFrame(processCameraFrame);
 }
 
-function findCandidateQuads(bin, w, h) {
+function fallbackToBroadcast() {
+  document.getElementById("telemetryState").textContent = "LINK: LOCAL BUS";
+  document.getElementById("telemetryState").style.color = "var(--accent)";
+}
+
+function sendTelemetry(pose, anchorId) {
+  const payload = JSON.stringify({
+    deviceId: DEVICE_ID,
+    timestamp: Date.now(),
+    pose: {
+      x: Number(pose.x.toFixed(3)),
+      y: Number(pose.y.toFixed(3)),
+      z: Number(pose.z.toFixed(3)),
+      yaw: Number(pose.yaw.toFixed(1))
+    },
+    lockedAnchor: anchorId
+  });
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(payload);
+  }
+  if (broadcastChan) {
+    broadcastChan.postMessage(JSON.parse(payload));
+  }
+
+  txCounter++;
+  document.getElementById("txCount").textContent = txCounter;
+}
+
+function decodePermutedTag(gray, w, h, quad) {
+  const N = 6;
+  let rawGrid = [];
+
+  for (let r = 0; r < N; r++) {
+    rawGrid[r] = [];
+    for (let c = 0; c < N; c++) {
+      const u = (c + 0.5) / N, v = (r + 0.5) / N;
+      const xTop = quad[0].x + u * (quad[1].x - quad[0].x);
+      const yTop = quad[0].y + u * (quad[1].y - quad[0].y);
+      const xBot = quad[3].x + u * (quad[2].x - quad[3].x);
+      const yBot = quad[3].y + u * (quad[2].y - quad[3].y);
+      const px = Math.round(xTop + v * (xBot - xTop));
+      const py = Math.round(yTop + v * (yBot - yTop));
+
+      rawGrid[r][c] = (px >= 0 && px < w && py >= 0 && py < h) ? (gray[py * w + px] > 128 ? 1 : 0) : 0;
+    }
+  }
+
+  let borders = 0;
+  for (let i = 0; i < N; i++) {
+    if (rawGrid[0][i] === 0) borders++;
+    if (rawGrid[N - 1][i] === 0) borders++;
+    if (rawGrid[i][0] === 0) borders++;
+    if (rawGrid[i][N - 1] === 0) borders++;
+  }
+  if (borders < 16) return null;
+
+  let inner = [];
+  for (let r = 1; r <= 4; r++) {
+    inner.push(rawGrid[r].slice(1, 5));
+  }
+
+  for (let rot = 0; rot < 4; rot++) {
+    let bits = 0;
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        bits = (bits << 1) | inner[r][c];
+      }
+    }
+    const match = FACILITY_MAP.anchors.find(a => (bits % 4) === a.code || bits === a.code);
+    if (match) return { anchor: match, rotIndex: rot };
+    inner = inner[0].map((_, idx) => inner.map(row => row[idx]).reverse());
+  }
+  return null;
+}
+
+function solveRigidTransform(detection, quad) {
+  const anchor = detection.anchor;
+  const tagSize = anchor.size;
+  const pxWidth = Math.hypot(quad[1].x - quad[0].x, quad[1].y - quad[0].y);
+  const pxHeight = Math.hypot(quad[2].x - quad[1].x, quad[2].y - quad[1].y);
+  const avgDim = (pxWidth + pxHeight) * 0.5;
+
+  const focalPixels = PROC_W * 1.25;
+  const distMetric = (focalPixels * tagSize) / avgDim;
+
+  const quadCenterX = (quad[0].x + quad[1].x + quad[2].x + quad[3].x) * 0.25;
+  const bearingRad = Math.atan2(quadCenterX - (PROC_W * 0.5), focalPixels);
+  const bearingDeg = bearingRad * (180 / Math.PI);
+
+  const worldAngleRad = ((anchor.yaw + bearingDeg) * Math.PI) / 180;
+  rawPose.x = anchor.x + Math.sin(worldAngleRad) * distMetric;
+  rawPose.y = anchor.y;
+  rawPose.z = anchor.z + Math.cos(worldAngleRad) * distMetric;
+  rawPose.yaw = (anchor.yaw + bearingDeg + 180) % 360;
+
+  filteredPose.x = filteredPose.x === 0 ? rawPose.x : (filterAlpha * rawPose.x + (1 - filterAlpha) * filteredPose.x);
+  filteredPose.y = filteredPose.y === 0 ? rawPose.y : (filterAlpha * rawPose.y + (1 - filterAlpha) * filteredPose.y);
+  filteredPose.z = filteredPose.z === 0 ? rawPose.z : (filterAlpha * rawPose.z + (1 - filterAlpha) * filteredPose.z);
+  filteredPose.yaw = rawPose.yaw;
+
+  document.getElementById("posVec").textContent = 
+    `${filteredPose.x.toFixed(2)}, ${filteredPose.y.toFixed(2)}, ${filteredPose.z.toFixed(2)}`;
+  document.getElementById("yawDeg").textContent = 
+    `${Math.round(filteredPose.yaw).toString().padStart(3, "0")}°`;
+  document.getElementById("activeAnchor").textContent = anchor.id;
+
+  sendTelemetry(filteredPose, anchor.id);
+}
+
+function processFrame() {
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    if (hud.width !== video.videoWidth || hud.height !== video.videoHeight) {
+      hud.width = video.videoWidth;
+      hud.height = video.videoHeight;
+      PROC_H = Math.round((video.videoHeight / video.videoWidth) * PROC_W);
+      pCanvas.width = PROC_W;
+      pCanvas.height = PROC_H;
+    }
+
+    hctx.clearRect(0, 0, hud.width, hud.height);
+    pctx.drawImage(video, 0, 0, PROC_W, PROC_H);
+
+    const img = pctx.getImageData(0, 0, PROC_W, PROC_H);
+    const d = img.data;
+    const gray = new Uint8Array(PROC_W * PROC_H);
+    for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+      gray[j] = (d[i] * 77 + d[i+1] * 150 + d[i+2] * 29) >> 8;
+    }
+
+    const bin = new Uint8Array(PROC_W * PROC_H);
+    const S = PROC_W >> 3, s2 = S >> 1;
+    const integral = new Int32Array(PROC_W * PROC_H);
+
+    for (let i = 0; i < PROC_W; i++) {
+      let sum = 0;
+      for (let j = 0; j < PROC_H; j++) {
+        const idx = j * PROC_W + i;
+        sum += gray[idx];
+        integral[idx] = (i === 0 ? 0 : integral[idx - 1]) + sum;
+      }
+    }
+
+    for (let i = 0; i < PROC_W; i++) {
+      for (let j = 0; j < PROC_H; j++) {
+        const idx = j * PROC_W + i;
+        const x1 = Math.max(i - s2, 1), x2 = Math.min(i + s2, PROC_W - 1);
+        const y1 = Math.max(j - s2, 1), y2 = Math.min(j + s2, PROC_H - 1);
+        const count = (x2 - x1) * (y2 - y1);
+        const sum = integral[y2 * PROC_W + x2] - integral[y1 * PROC_W + x2] - integral[y2 * PROC_W + x1] + integral[y1 * PROC_W + x1];
+        bin[idx] = (gray[idx] * count <= sum * 0.82) ? 0 : 255;
+      }
+    }
+
+    const quads = findQuads(bin, PROC_W, PROC_H);
+    quads.forEach(q => {
+      const match = decodePermutedTag(gray, PROC_W, PROC_H, q);
+      if (match) {
+        solveRigidTransform(match, q);
+        drawHUD(q, match.anchor.id);
+      }
+    });
+  }
+  requestAnimationFrame(processFrame);
+}
+
+function findQuads(bin, w, h) {
   const visited = new Uint8Array(w * h);
   const quads = [];
-
-  for (let y = 4; y < h - 4; y += 2) {
-    for (let x = 4; x < w - 4; x += 2) {
+  for (let y = 6; y < h - 6; y += 4) {
+    for (let x = 6; x < w - 6; x += 4) {
       const idx = y * w + x;
       if (bin[idx] === 0 && !visited[idx]) {
-        const contour = traceContour(bin, visited, w, h, x, y);
-        if (contour && contour.length > 20 && contour.length < 800) {
-          const poly = approximatePolygon(contour, 4.0);
-          if (poly.length === 4 && isConvexQuad(poly)) {
-            const area = polygonArea(poly);
-            if (area > 300 && area < (w * h * 0.8)) {
-              quads.push(poly);
-            }
-          }
+        const c = traceContour(bin, visited, w, h, x, y);
+        if (c && c.length > 20 && c.length < 700) {
+          const poly = approxPoly(c, 5.0);
+          if (poly.length === 4) quads.push(poly);
         }
       }
     }
@@ -571,14 +301,13 @@ function findCandidateQuads(bin, w, h) {
   return quads;
 }
 
-function traceContour(bin, visited, w, h, startX, startY) {
+function traceContour(bin, visited, w, h, sx, sy) {
   const pts = [];
-  let cx = startX, cy = startY;
+  let cx = sx, cy = sy;
   const dx = [1, 1, 0, -1, -1, -1, 0, 1];
   const dy = [0, 1, 1, 1, 0, -1, -1, -1];
   let dir = 7;
-
-  for (let step = 0; step < 1200; step++) {
+  for (let step = 0; step < 700; step++) {
     pts.push({ x: cx, y: cy });
     visited[cy * w + cx] = 1;
     let found = false;
@@ -592,298 +321,63 @@ function traceContour(bin, visited, w, h, startX, startY) {
         break;
       }
     }
-    if (!found || (cx === startX && cy === startY && pts.length > 4)) break;
+    if (!found || (cx === sx && cy === sy && pts.length > 4)) break;
   }
   return pts;
 }
 
-function approximatePolygon(pts, epsilon) {
+function approxPoly(pts, eps) {
   if (pts.length < 3) return pts;
   let dmax = 0, idx = 0;
-  const p1 = pts[0], p2 = pts[pts.length - 1];
-
   for (let i = 1; i < pts.length - 1; i++) {
-    const d = perpendicularDistance(pts[i], p1, p2);
+    const d = distToLine(pts[i], pts[0], pts[pts.length - 1]);
     if (d > dmax) { idx = i; dmax = d; }
   }
-
-  if (dmax > epsilon) {
-    const r1 = approximatePolygon(pts.slice(0, idx + 1), epsilon);
-    const r2 = approximatePolygon(pts.slice(idx), epsilon);
-    return r1.slice(0, r1.length - 1).concat(r2);
+  if (dmax > eps) {
+    return approxPoly(pts.slice(0, idx + 1), eps).slice(0, -1).concat(approxPoly(pts.slice(idx), eps));
   }
-  return [p1, p2];
+  return [pts[0], pts[pts.length - 1]];
 }
 
-function perpendicularDistance(p, a, b) {
-  const dx = b.x - a.x, dy = b.y - a.y;
-  const mag = Math.hypot(dx, dy);
-  if (mag === 0) return Math.hypot(p.x - a.x, p.y - a.y);
-  return Math.abs(dy * p.x - dx * p.y + b.x * a.y - b.y * a.x) / mag;
+function distToLine(p, a, b) {
+  const mag = Math.hypot(b.x - a.x, b.y - a.y);
+  return mag === 0 ? Math.hypot(p.x - a.x, p.y - a.y) : Math.abs((b.y - a.y)*p.x - (b.x - a.x)*p.y + b.x*a.y - b.y*a.x) / mag;
 }
 
-function polygonArea(q) {
-  return Math.abs((q[0].x*(q[1].y-q[3].y) + q[1].x*(q[2].y-q[0].y) + q[2].x*(q[3].y-q[1].y) + q[3].x*(q[0].y-q[2].y)) * 0.5);
+function drawHUD(q, id) {
+  const sx = hud.width / PROC_W;
+  const sy = hud.height / PROC_H;
+  hctx.strokeStyle = "#00d0ff";
+  hctx.lineWidth = 2;
+  hctx.beginPath();
+  hctx.moveTo(q[0].x * sx, q[0].y * sy);
+  hctx.lineTo(q[1].x * sx, q[1].y * sy);
+  hctx.lineTo(q[2].x * sx, q[2].y * sy);
+  hctx.lineTo(q[3].x * sx, q[3].y * sy);
+  hctx.closePath();
+  hctx.stroke();
+
+  hctx.fillStyle = "rgba(0, 208, 255, 0.2)";
+  hctx.fill();
+  hctx.fillStyle = "#00d0ff";
+  hctx.font = "bold 12px monospace";
+  hctx.fillText(`LOC: ${id}`, q[0].x * sx, q[0].y * sy - 6);
 }
 
-function isConvexQuad(q) {
-  let sign = 0;
-  for (let i = 0; i < 4; i++) {
-    const p1 = q[i], p2 = q[(i + 1) % 4], p3 = q[(i + 2) % 4];
-    const cp = (p2.x - p1.x) * (p3.y - p2.y) - (p2.y - p1.y) * (p3.x - p2.x);
-    if (cp !== 0) {
-      if (sign === 0) sign = cp > 0 ? 1 : -1;
-      else if ((cp > 0 ? 1 : -1) !== sign) return false;
-    }
-  }
-  return true;
-}
-
-function decodeTagPayload(gray, w, h, quad) {
-  const N = 6;
-  const grid = [];
-  let blackBorderPasses = 0;
-
-  for (let r = 0; r < N; r++) {
-    grid[r] = [];
-    for (let c = 0; c < N; c++) {
-      const u = (c + 0.5) / N;
-      const v = (r + 0.5) / N;
-      const xTop = quad[0].x + u * (quad[1].x - quad[0].x);
-      const yTop = quad[0].y + u * (quad[1].y - quad[0].y);
-      const xBot = quad[3].x + u * (quad[2].x - quad[3].x);
-      const yBot = quad[3].y + u * (quad[2].y - quad[3].y);
-
-      const px = Math.round(xTop + v * (xBot - xTop));
-      const py = Math.round(yTop + v * (yBot - yTop));
-
-      if (px >= 0 && px < w && py >= 0 && py < h) {
-        grid[r][c] = gray[py * w + px] > 128 ? 1 : 0;
-      } else {
-        grid[r][c] = 0;
-      }
-
-      if ((r === 0 || r === N - 1 || c === 0 || c === N - 1) && grid[r][c] === 0) {
-        blackBorderPasses++;
-      }
-    }
-  }
-
-  if (blackBorderPasses < 16) return null;
-
-  let bits = 0;
-  for (let r = 1; r <= 4; r++) {
-    for (let c = 1; c <= 4; c++) {
-      bits = (bits << 1) | grid[r][c];
-    }
-  }
-
-  const matchedAnchor = mapData.anchors.find(a => (bits % 4) === a.numericId || bits === a.numericId);
-  if (matchedAnchor) {
-    return { id: matchedAnchor.id, numericId: matchedAnchor.numericId };
-  }
-  return null;
-}
-
-function computeVPSPose(detection) {
-  const anchor = mapData.anchors.find(a => a.id === detection.id);
-  if (!anchor) return;
-
-  const q = detection.corners;
-  const pxWidth = Math.hypot(q[1].x - q[0].x, q[1].y - q[0].y);
-  const pxHeight = Math.hypot(q[2].x - q[1].x, q[2].y - q[1].y);
-  const avgSide = (pxWidth + pxHeight) * 0.5;
-
-  const focalRatio = parseFloat($("focalRatio").value) || 1.25;
-  const fPixels = PROC_W * focalRatio;
-  const tagSize = anchor.size || 0.16;
-  const distance = (fPixels * tagSize) / avgSide;
-
-  const quadCenterX = (q[0].x + q[1].x + q[2].x + q[3].x) / 4;
-  const deltaPixelsX = quadCenterX - (PROC_W / 2);
-  const bearingRad = Math.atan2(deltaPixelsX, fPixels);
-  const bearingDeg = bearingRad * (180 / Math.PI);
-
-  const worldRad = (anchor.rotation + bearingDeg) * (Math.PI / 180);
-  phonePose.x = anchor.x + Math.sin(worldRad) * distance;
-  phonePose.y = anchor.y;
-  phonePose.z = anchor.z + Math.cos(worldRad) * distance;
-  phonePose.heading = (anchor.rotation + bearingDeg + 180) % 360;
-
-  localized = true;
-
-  $("statusDot").className = "status-dot active";
-  $("vpsState").textContent = "POSITION LOCKED";
-  $("vpsState").style.color = "var(--status-ok)";
-  $("currentAnchor").textContent = anchor.id;
-  $("positionText").textContent = `${phonePose.x.toFixed(2)}, ${phonePose.y.toFixed(2)}, ${phonePose.z.toFixed(2)}`;
-  $("xVal").textContent = phonePose.x.toFixed(2) + " m";
-  $("yVal").textContent = phonePose.y.toFixed(2) + " m";
-  $("zVal").textContent = phonePose.z.toFixed(2) + " m";
-  $("headingVal").textContent = Math.round(phonePose.heading).toString().padStart(3, "0") + "°";
-
-  drawMap();
-  renderObjects();
-}
-
-function decayLocalization() {
-  $("statusDot").className = "status-dot";
-  $("vpsState").textContent = "COARSE TRACKING";
-  $("vpsState").style.color = "var(--status-warn)";
-}
-
-function drawQuadHUD(q, sx, sy, id) {
-  octx.strokeStyle = "#00d0ff";
-  octx.lineWidth = 2;
-  octx.beginPath();
-  octx.moveTo(q[0].x * sx, q[0].y * sy);
-  octx.lineTo(q[1].x * sx, q[1].y * sy);
-  octx.lineTo(q[2].x * sx, q[2].y * sy);
-  octx.lineTo(q[3].x * sx, q[3].y * sy);
-  octx.closePath();
-  octx.stroke();
-
-  octx.fillStyle = "rgba(0, 208, 255, 0.15)";
-  octx.fill();
-
-  octx.fillStyle = "#00d0ff";
-  octx.font = "bold 13px monospace";
-  octx.fillText(`ID: ${id}`, q[0].x * sx, q[0].y * sy - 8);
-}
-
-function drawMap() {
-  const c = $("mapCanvas"), ctx = c.getContext("2d");
-  ctx.clearRect(0, 0, c.width, c.height);
-  ctx.fillStyle = "#080b0f"; ctx.fillRect(0, 0, c.width, c.height);
-
-  const anchors = mapData.anchors;
-  const pts = [...anchors, { x: phonePose.x, z: phonePose.z }];
-  const minX = Math.min(...pts.map(p => p.x), 0), maxX = Math.max(...pts.map(p => p.x), 5);
-  const minZ = Math.min(...pts.map(p => p.z), 0), maxZ = Math.max(...pts.map(p => p.z), 5);
-  const pad = 35;
-  const sx = (c.width - 2 * pad) / Math.max(1, maxX - minX);
-  const sz = (c.height - 2 * pad) / Math.max(1, maxZ - minZ);
-  const scale = Math.min(sx, sz);
-  const mapX = x => pad + (x - minX) * scale;
-  const mapY = z => c.height - pad - (z - minZ) * scale;
-
-  ctx.strokeStyle = "rgba(64, 82, 105, 0.3)"; ctx.lineWidth = 1;
-  for (let x = 0; x < c.width; x += 25) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, c.height); ctx.stroke(); }
-  for (let y = 0; y < c.height; y += 25) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(c.width, y); ctx.stroke(); }
-
-  anchors.forEach(a => {
-    const x = mapX(a.x), y = mapY(a.z);
-    ctx.fillStyle = "#00d0ff"; ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#8b9bb0"; ctx.font = "10px monospace"; ctx.fillText(a.id, x + 8, y + 3);
-  });
-
-  if (localized) {
-    const x = mapX(phonePose.x), y = mapY(phonePose.z);
-    ctx.fillStyle = "#00ff88"; ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "#00ff88"; ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + Math.sin(phonePose.heading * Math.PI / 180) * 18, y - Math.cos(phonePose.heading * Math.PI / 180) * 18);
-    ctx.stroke();
-  }
-}
-
-function renderObjects() {
-  $("arObjects").innerHTML = "";
-  if (!localized) return;
-  mapData.objects.forEach(o => {
-    const dx = o.x - phonePose.x, dz = o.z - phonePose.z;
-    const angle = Math.atan2(dx, dz) * 180 / Math.PI;
-    const left = 50 + angle * 0.6;
-    const distance = Math.hypot(dx, dz);
-    const top = 55 - (o.y - phonePose.y) * 25;
-    if (left < 5 || left > 95 || distance > 25) return;
-    const d = document.createElement("div");
-    d.className = `arObj ${o.type}`;
-    d.style.left = left + "%"; d.style.top = top + "%";
-    d.textContent = o.type === "fire" ? "CRITICAL HAZARD" : "PRIMARY EXIT";
-    $("arObjects").appendChild(d);
-  });
-}
-
-async function startCamera() {
+document.getElementById("btnStart").onclick = async () => {
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: false
+    initTelemetryPipe();
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }
     });
     video.srcObject = stream;
     await video.play();
-    $("cameraPlaceholder").style.display = "none";
-    cancelAnimationFrame(animFrameId);
-    animFrameId = requestAnimationFrame(processCameraFrame);
-  } catch (e) {
-    alert("Camera initialization error: " + e.message);
+    document.querySelector(".controls").style.display = "none";
+    requestAnimationFrame(processFrame);
+  } catch (err) {
+    alert("Sensor access error: " + err.message);
   }
-}
-
-function stopCamera() {
-  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  video.srcObject = null;
-  cancelAnimationFrame(animFrameId);
-  octx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-  $("cameraPlaceholder").style.display = "flex";
-  decayLocalization();
-}
-
-function renderAnchorList() {
-  $("anchorList").innerHTML = "";
-  mapData.anchors.forEach(a => {
-    const div = document.createElement("div");
-    div.className = "anchor-row";
-    div.innerHTML = `<span>${a.id} [ID:${a.numericId}]</span><span>${a.x.toFixed(1)}, ${a.y.toFixed(1)}, ${a.z.toFixed(1)}m</span>`;
-    $("anchorList").appendChild(div);
-  });
-}
-
-function addAnchor() {
-  const count = mapData.anchors.length;
-  mapData.anchors.push({
-    id: `TAG_${count}`,
-    numericId: count,
-    x: (count % 2) * 3,
-    y: 0,
-    z: Math.floor(count / 2) * 3,
-    rotation: 0,
-    size: 0.16
-  });
-  renderAnchorList();
-  drawMap();
-}
-
-function addObject(type) {
-  mapData.objects.push({
-    id: String(Date.now()),
-    type,
-    x: phonePose.x,
-    y: phonePose.y,
-    z: phonePose.z + 1.5
-  });
-  renderObjects();
-}
-
-$("startCamera").onclick = startCamera;
-$("stopCamera").onclick = stopCamera;
-$("addAnchor").onclick = addAnchor;
-$("addFire").onclick = () => addObject("fire");
-$("addExit").onclick = () => addObject("exit");
-$("clearObjects").onclick = () => { mapData.objects = []; renderObjects(); };
-$("downloadMap").onclick = () => {
-  const blob = new Blob([JSON.stringify(mapData, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "vps-map.json";
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
-
-renderAnchorList();
-drawMap();
 </script>
 </body>
 </html>
